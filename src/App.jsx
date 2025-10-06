@@ -27,7 +27,7 @@ export default function ExpertApp() {
     planting_trees_amount_level: 0,
     dam_levee_construction_cost_level: 0,
     house_migration_amount_level: 0,
-    paddy_dam_construction_cost_level: 0,
+    flow_irrigation_level_level: 0,
   });
 
 
@@ -331,7 +331,7 @@ export default function ExpertApp() {
         rec.options?.planting_trees_amount_level === dbOptions.planting_trees_amount_level &&
         rec.options?.dam_levee_construction_cost_level === dbOptions.dam_levee_construction_cost_level &&
         rec.options?.house_migration_amount_level === dbOptions.house_migration_amount_level &&
-        rec.options?.paddy_dam_construction_cost_level === dbOptions.paddy_dam_construction_cost_level
+        rec.options?.flow_irrigation_level_level === dbOptions.flow_irrigation_level_level
       );
       if (!seriesMap.has(key)) seriesMap.set(key, { x: [], y: [], customdata: [], name: key, selected: false });
       const s = seriesMap.get(key);
@@ -353,12 +353,12 @@ export default function ExpertApp() {
         if (opts.planting_trees_amount_level !== undefined) lines.push(`Planting & Forest Conservation Level: ${opts.planting_trees_amount_level}`);
         if (opts.dam_levee_construction_cost_level !== undefined) lines.push(`Dam & Levee Level: ${opts.dam_levee_construction_cost_level}`);
         if (opts.house_migration_amount_level !== undefined) lines.push(`House Migration Level: ${opts.house_migration_amount_level}`);
-        if (opts.paddy_dam_construction_cost_level !== undefined) lines.push(`Paddy Dam Level: ${opts.paddy_dam_construction_cost_level}`);
+        if (opts.flow_irrigation_level_level !== undefined) lines.push(`Flow Irrigation Level: ${opts.flow_irrigation_level_level}`);
         if (opts.RCP) lines.push(`RCP: ${opts.RCP}`);
         return lines.join('<br>') + '<extra></extra>';
       })()
     }));
-  }, [meansData, period, scenario, axisLabels, dbOptions.planting_trees_amount_level, dbOptions.dam_levee_construction_cost_level, dbOptions.house_migration_amount_level, dbOptions.paddy_dam_construction_cost_level]);
+  }, [meansData, period, scenario, axisLabels, dbOptions.planting_trees_amount_level, dbOptions.dam_levee_construction_cost_level, dbOptions.house_migration_amount_level, dbOptions.flow_irrigation_level_level]);
 
   // 散布図クリックでDBオプションへ反映
   const handleScatterClick = (event) => {
@@ -370,7 +370,7 @@ export default function ExpertApp() {
         planting_trees_amount_level: Number(opts?.planting_trees_amount_level),
         dam_levee_construction_cost_level: Number(opts?.dam_levee_construction_cost_level),
         house_migration_amount_level: Number(opts?.house_migration_amount_level),
-        paddy_dam_construction_cost_level: Number(opts?.paddy_dam_construction_cost_level)
+        flow_irrigation_level_level: Number(opts?.flow_irrigation_level_level)
       };
       // いずれかが数値であれば反映
       if (Object.values(next).some(v => Number.isFinite(v))) {
@@ -378,7 +378,7 @@ export default function ExpertApp() {
           planting_trees_amount_level: Number.isFinite(next.planting_trees_amount_level) ? next.planting_trees_amount_level : prev.planting_trees_amount_level,
           dam_levee_construction_cost_level: Number.isFinite(next.dam_levee_construction_cost_level) ? next.dam_levee_construction_cost_level : prev.dam_levee_construction_cost_level,
           house_migration_amount_level: Number.isFinite(next.house_migration_amount_level) ? next.house_migration_amount_level : prev.house_migration_amount_level,
-          paddy_dam_construction_cost_level: Number.isFinite(next.paddy_dam_construction_cost_level) ? next.paddy_dam_construction_cost_level : prev.paddy_dam_construction_cost_level
+          flow_irrigation_level_level: Number.isFinite(next.flow_irrigation_level_level) ? next.flow_irrigation_level_level : prev.flow_irrigation_level_level
         }));
       }
     } catch (_) {
@@ -399,7 +399,7 @@ export default function ExpertApp() {
       planting_trees_amount_level: Number(opts?.planting_trees_amount_level),
       dam_levee_construction_cost_level: Number(opts?.dam_levee_construction_cost_level),
       house_migration_amount_level: Number(opts?.house_migration_amount_level),
-      paddy_dam_construction_cost_level: Number(opts?.paddy_dam_construction_cost_level)
+      flow_irrigation_level_level: Number(opts?.flow_irrigation_level_level)
     };
     
     // いずれかが数値であれば反映
@@ -408,7 +408,7 @@ export default function ExpertApp() {
         planting_trees_amount_level: Number.isFinite(next.planting_trees_amount_level) ? next.planting_trees_amount_level : prev.planting_trees_amount_level,
         dam_levee_construction_cost_level: Number.isFinite(next.dam_levee_construction_cost_level) ? next.dam_levee_construction_cost_level : prev.dam_levee_construction_cost_level,
         house_migration_amount_level: Number.isFinite(next.house_migration_amount_level) ? next.house_migration_amount_level : prev.house_migration_amount_level,
-        paddy_dam_construction_cost_level: Number.isFinite(next.paddy_dam_construction_cost_level) ? next.paddy_dam_construction_cost_level : prev.paddy_dam_construction_cost_level
+        flow_irrigation_level_level: Number.isFinite(next.flow_irrigation_level_level) ? next.flow_irrigation_level_level : prev.flow_irrigation_level_level
       }));
     }
   };
@@ -439,7 +439,7 @@ export default function ExpertApp() {
         rec.options?.planting_trees_amount_level === dbOptions.planting_trees_amount_level &&
         rec.options?.dam_levee_construction_cost_level === dbOptions.dam_levee_construction_cost_level &&
         rec.options?.house_migration_amount_level === dbOptions.house_migration_amount_level &&
-        rec.options?.paddy_dam_construction_cost_level === dbOptions.paddy_dam_construction_cost_level
+        rec.options?.flow_irrigation_level_level === dbOptions.flow_irrigation_level_level
       ) ? 1 : 0;
       highlight.push(isSelected);
       for (const m of fixedOutputMetrics) valuesByMetric[m].push(rec.metrics?.[m] ?? 0);
@@ -450,7 +450,7 @@ export default function ExpertApp() {
       if (opts.planting_trees_amount_level !== undefined) lines.push(`Planting Level: ${opts.planting_trees_amount_level}`);
       if (opts.dam_levee_construction_cost_level !== undefined) lines.push(`Dam & Levee Level: ${opts.dam_levee_construction_cost_level}`);
       if (opts.house_migration_amount_level !== undefined) lines.push(`House Migration Level: ${opts.house_migration_amount_level}`);
-      if (opts.paddy_dam_construction_cost_level !== undefined) lines.push(`Paddy Dam Level: ${opts.paddy_dam_construction_cost_level}`);
+      if (opts.flow_irrigation_level_level !== undefined) lines.push(`Flow Irrigation Level: ${opts.flow_irrigation_level_level}`);
       if (opts.RCP) lines.push(`RCP: ${opts.RCP}`);
       customdata.push(lines.join('<br>'));
       
@@ -476,7 +476,7 @@ export default function ExpertApp() {
       text: customdata,
       hoverinfo: 'text'
     };
-  }, [meansData, period, scenario, dbOptions.planting_trees_amount_level, dbOptions.dam_levee_construction_cost_level, dbOptions.house_migration_amount_level, dbOptions.paddy_dam_construction_cost_level]);
+  }, [meansData, period, scenario, dbOptions.planting_trees_amount_level, dbOptions.dam_levee_construction_cost_level, dbOptions.house_migration_amount_level, dbOptions.flow_irrigation_level_level]);
 
   // 時系列データ（options_simulation_timeseries.json を使用）
   const timeseriesTraces = useMemo(() => {
@@ -488,7 +488,7 @@ export default function ExpertApp() {
       const matchOpts = (opt.planting_trees_amount_level === dbOptions.planting_trees_amount_level)
         && (opt.dam_levee_construction_cost_level === dbOptions.dam_levee_construction_cost_level)
         && (opt.house_migration_amount_level === dbOptions.house_migration_amount_level)
-        && (opt.paddy_dam_construction_cost_level === dbOptions.paddy_dam_construction_cost_level);
+        && (opt.flow_irrigation_level_level === dbOptions.flow_irrigation_level_level);
       return matchScenario && matchOpts;
     });
 
@@ -694,10 +694,10 @@ export default function ExpertApp() {
             </Box>
 
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Paddy Dam Construction Level</Typography>
+              <Typography gutterBottom>Flow Irrigation Level</Typography>
               <Slider
-                value={dbOptions.paddy_dam_construction_cost_level}
-                onChange={(e, newValue) => handleDbOptionChange('paddy_dam_construction_cost_level', newValue)}
+                value={dbOptions.flow_irrigation_level_level}
+                onChange={(e, newValue) => handleDbOptionChange('flow_irrigation_level_level', newValue)}
                 valueLabelDisplay="auto"
                 min={0}
                 max={2}
