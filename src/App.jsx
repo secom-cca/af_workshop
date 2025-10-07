@@ -69,11 +69,29 @@ export default function ExpertApp() {
       src: '/system_dynamics.png',
       alt: 'システムダイナミクス図'
     },
-    'model-overview': {
-      title: 'モデル概要',
+    'municipality-overview': {
+      title: 'モデル自治体概要',
       type: 'image',
-      src: '/model_overview.png',
+      src: '/municipality_overview.png',
       alt: 'モデル概要図'
+    },
+    'policy-options': {
+      title: '意思決定項目',
+      type: 'image',
+      src: '/policy_options.png',
+      alt: '意思決定項目図'
+    },
+    'goals': {
+      title: '各自治体の目標',
+      type: 'image',
+      src: '/goals.png',
+      alt: '目標図'
+    },
+    'stakeholders': {
+      title: '担当課',
+      type: 'image',
+      src: '/stakeholders.png',
+      alt: '担当課図'
     },
     'methodology': {
       title: '手法説明',
