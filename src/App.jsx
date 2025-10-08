@@ -602,7 +602,7 @@ export default function ExpertApp() {
           </DialogActions>
         </Dialog>
         <Box sx={{ width: '10%', minWidth: 160, borderRight: '1px solid rgba(0,0,0,0.12)', p: 2, height: 'calc(100vh - 64px)', overflow: 'auto' }}>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Input</Typography>
+            <Typography variant="title1" color="text.secondary" gutterBottom>Input</Typography>
             <Divider sx={{ mb: 2 }} />
             
             <Box sx={{ mb: 2 }}>
@@ -638,7 +638,7 @@ export default function ExpertApp() {
             </FormControl>
 
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Year</Typography>
+              <Typography gutterBottom>Year: {period}</Typography>
               <Slider
                 value={period}
                 onChange={(e, newValue) => setPeriod(newValue)}
@@ -809,7 +809,7 @@ export default function ExpertApp() {
                 </Box>
               </Paper>
 
-            <Typography variant="subtitle2" color="text.secondary">All Scenarios Parallel Categories in {period} (Average of time series samples)</Typography>
+            <Typography variant="subtitle1" color="text.secondary">All Scenarios Parallel Categories in {period} (Average of time series samples)</Typography>
             <Paper sx={{ p: 1, pb: 6, flex: 1, height: 'calc(50vh - 80px)', position: 'relative' }}>
                 <Plot
                   data={[{
@@ -839,7 +839,7 @@ export default function ExpertApp() {
         <Box sx={{ width: '45%', p: 2, height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
           <Stack spacing={1} sx={{ height: '100%' }}>
             {/* 折れ線グラフエリア */}
-            <Typography variant="subtitle2" color="text.secondary">Time Series in Specific Policy Scenario</Typography>
+            <Typography variant="subtitle1" color="text.secondary">Time Series in Specific Policy Scenario</Typography>
             <Paper sx={{ p: 1, pb: 10, flex: 1, height: '40vh', position: 'relative' }}>
               <Plot
                 data={timeseriesTraces}
