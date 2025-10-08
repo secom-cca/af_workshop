@@ -19,7 +19,7 @@ const theme = createTheme({
 });
 
 export default function ExpertApp() {
-  const [scenario, setScenario] = useState('ALL');
+  const [scenario, setScenario] = useState('RCP4.5');
   const [period, setPeriod] = useState(2050);
   
   // データベースオプション選択状態
@@ -630,7 +630,9 @@ export default function ExpertApp() {
               <Select labelId="scenario-label" value={scenario} label="Scenario" onChange={(e) => setScenario(e.target.value)} size="small" aria-label="small">
                 <MenuItem value={'ALL'}>ALL</MenuItem>
                 <MenuItem value={'RCP1.9'}>RCP1.9</MenuItem>
+                <MenuItem value={'RCP2.6'}>RCP2.6</MenuItem>
                 <MenuItem value={'RCP4.5'}>RCP4.5</MenuItem>
+                <MenuItem value={'RCP6.0'}>RCP6.0</MenuItem>
                 <MenuItem value={'RCP8.5'}>RCP8.5</MenuItem>
               </Select>
             </FormControl>
