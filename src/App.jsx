@@ -64,46 +64,46 @@ export default function ExpertApp() {
   // 右下コンテンツデータ
   const contentData = {
     'system-dynamics': {
-      title: 'システムダイナミクス',
+      title: 'Model Configuration',
       type: 'image',
       src: '/system_dynamics.png',
-      alt: 'システムダイナミクス図'
+      alt: 'Model Configuration'
     },
     'municipality-overview': {
-      title: 'モデル自治体概要',
+      title: 'Municipality Overview',
       type: 'image',
       src: '/municipality_overview.png',
-      alt: 'モデル概要図'
+      alt: 'Municipality Overview'
     },
     'policy-options': {
-      title: '意思決定項目',
+      title: 'Policy Options',
       type: 'image',
       src: '/policy_options.png',
-      alt: '意思決定項目図'
+      alt: 'Policy Options'
     },
     'goals': {
-      title: '各自治体の目標',
+      title: 'Municipality Goals',
       type: 'image',
       src: '/goals.png',
-      alt: '目標図'
+      alt: 'Municipality Goals'
     },
     'stakeholders': {
-      title: '担当課',
+      title: 'Stakeholders',
       type: 'image',
       src: '/stakeholders.png',
-      alt: '担当課図'
+      alt: 'Stakeholders'
     },
     'methodology': {
-      title: '手法説明',
+      title: 'Methodology',
       type: 'pdf',
       src: '/methodology.pdf',
-      alt: '手法説明書'
+      alt: 'Methodology'
     },
     'results-summary': {
-      title: '結果サマリー',
+        title: 'Results Summary',
       type: 'image',
       src: '/results_summary.png',
-      alt: '結果サマリー図'
+      alt: 'Results Summary'
     }
   };
 
@@ -569,7 +569,7 @@ export default function ExpertApp() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            Analyze Dashboard
+            ADAPTATION GAME - Intersectoral Climate Change Adaptation Policy Making
           </Typography>
           <Menu
             anchorEl={menuAnchorEl}
@@ -579,6 +579,8 @@ export default function ExpertApp() {
             transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           >
             <MenuItem onClick={handleOpenUpload}>Upload</MenuItem>
+            <MenuItem onClick={() => window.open('https://drive.google.com/drive/u/2/folders/1wsfG6OjuAoR4Pp7BS3fDUya8kcQMFZxY', '_blank')}>Dataset</MenuItem>
+            <MenuItem onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScomqkIJ1s2SpUtUcNihqglpvDK6F2XVZRPWcWHdoBx7XgbUw/viewform', '_blank')}>Questionnaire</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
