@@ -69,17 +69,23 @@ export default function ExpertApp() {
       src: '/policy_options.png',
       alt: 'Policy Options'
     },
-    'system-dynamics': {
-      title: 'Model Configuration',
+    'policy-options-2': {
+      title: 'Policy Options with Value',
       type: 'image',
-      src: '/system_dynamics.png',
-      alt: 'Model Configuration'
+      src: '/policy_options_2.png',
+      alt: 'Policy Options with Value'
     },
     'municipality-overview': {
       title: 'Municipality Overview',
       type: 'image',
       src: '/municipality_overview.png',
       alt: 'Municipality Overview'
+    },
+    'system-dynamics': {
+      title: 'Model Configuration',
+      type: 'image',
+      src: '/system_dynamics.png',
+      alt: 'Model Configuration'
     },
     'goals': {
       title: 'Municipality Goals',
@@ -93,18 +99,36 @@ export default function ExpertApp() {
       src: '/stakeholders.png',
       alt: 'Stakeholders'
     },
-    'methodology': {
-      title: 'Methodology',
-      type: 'pdf',
-      src: '/methodology.pdf',
-      alt: 'Methodology'
-    },
-    'results-summary': {
-        title: 'Results Summary',
+    // 'methodology': {
+    //   title: 'Methodology',
+    //   type: 'pdf',
+    //   src: '/methodology.pdf',
+    //   alt: 'Methodology'
+    // },
+    'tradeoffs': {
+      title: 'River Basin Management',
       type: 'image',
-      src: '/results_summary.png',
-      alt: 'Results Summary'
-    }
+      src: '/tradeoffs.png',
+      alt: 'River Basin Management'
+    },
+    'tool-ui': {
+      title: 'Tool UI',
+      type: 'image',
+      src: '/tool_ui.png',
+      alt: 'Tool UI'
+    },
+    'reference-goals': {
+      title: 'Reference Point',
+      type: 'image',
+      src: '/appropriate_goals.png',
+      alt: 'Reference Point'
+    },
+    // 'results-summary': {
+    //     title: 'Results Summary',
+    //   type: 'image',
+    //   src: '/results_summary.png',
+    //   alt: 'Results Summary'
+    // }
   };
 
   // 画像クリックハンドラー
