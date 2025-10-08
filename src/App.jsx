@@ -39,7 +39,7 @@ export default function ExpertApp() {
   });
 
   // 右下コンテンツ切り替え状態
-  const [contentType, setContentType] = useState('system-dynamics');
+  const [contentType, setContentType] = useState('policy-options');
   const [popupImage, setPopupImage] = useState(null);
 
   // 軸範囲計算のキャッシュ
@@ -63,6 +63,12 @@ export default function ExpertApp() {
 
   // 右下コンテンツデータ
   const contentData = {
+    'policy-options': {
+      title: 'Policy Options',
+      type: 'image',
+      src: '/policy_options.png',
+      alt: 'Policy Options'
+    },
     'system-dynamics': {
       title: 'Model Configuration',
       type: 'image',
@@ -74,12 +80,6 @@ export default function ExpertApp() {
       type: 'image',
       src: '/municipality_overview.png',
       alt: 'Municipality Overview'
-    },
-    'policy-options': {
-      title: 'Policy Options',
-      type: 'image',
-      src: '/policy_options.png',
-      alt: 'Policy Options'
     },
     'goals': {
       title: 'Municipality Goals',
@@ -626,7 +626,7 @@ export default function ExpertApp() {
             </Box>
           <Stack spacing={2}>
             <FormControl fullWidth>
-              <InputLabel id="scenario-label">Scenario</InputLabel>
+              <InputLabel id="scenario-label">Climate Scenario</InputLabel>
               <Select labelId="scenario-label" value={scenario} label="Scenario" onChange={(e) => setScenario(e.target.value)} size="small" aria-label="small">
                 <MenuItem value={'ALL'}>ALL</MenuItem>
                 <MenuItem value={'RCP1.9'}>RCP1.9</MenuItem>
@@ -656,10 +656,10 @@ export default function ExpertApp() {
             </Box>
 
             <Divider sx={{ mb: 2 }} />
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Database Options</Typography>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Upstream Policy Options </Typography>
             
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Planting & Forest Conservation Level</Typography>
+              <Typography gutterBottom>Planting & Forest Conservation</Typography>
               <Slider
                 value={dbOptions.planting_trees_amount_level}
                 onChange={(e, newValue) => handleDbOptionChange('planting_trees_amount_level', newValue)}
@@ -678,7 +678,7 @@ export default function ExpertApp() {
             </Box>
 
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Dam & Levee Construction Level</Typography>
+              <Typography gutterBottom>Dam & Levee Construction</Typography>
               <Slider
                 value={dbOptions.dam_levee_construction_cost_level}
                 onChange={(e, newValue) => handleDbOptionChange('dam_levee_construction_cost_level', newValue)}
@@ -695,6 +695,9 @@ export default function ExpertApp() {
                 ]}
               />
             </Box>
+
+            <Divider sx={{ mb: 2 }} />
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Downstream Policy Options </Typography>
 
             <Box sx={{ px: 2 }}>
               <Typography gutterBottom>House Migration Level</Typography>
@@ -716,7 +719,7 @@ export default function ExpertApp() {
             </Box>
 
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Flow Irrigation Level</Typography>
+              <Typography gutterBottom>Flow Irrigation</Typography>
               <Slider
                 value={dbOptions.flow_irrigation_level_level}
                 onChange={(e, newValue) => handleDbOptionChange('flow_irrigation_level_level', newValue)}
@@ -740,7 +743,7 @@ export default function ExpertApp() {
 
         <Box sx={{ width: '45%', p: 2, borderRight: '1px solid rgba(0,0,0,0.12)', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
           <Stack spacing={1} sx={{ height: '100%' }}>
-            <Typography variant="subtitle2" color="text.secondary">Scatter Plot</Typography>
+            <Typography variant="subtitle1" color="text.secondary">All Scenarios Scatter in {period} (Average of time series samples)</Typography>
             <Paper sx={{ p: 1, pt: 3, pb: 10, flex: 1, height: 'calc(50vh - 80px)', position: 'relative' }}>
                 <Plot
                   data={scatterData}
@@ -806,7 +809,7 @@ export default function ExpertApp() {
                 </Box>
               </Paper>
 
-            <Typography variant="subtitle2" color="text.secondary">Parallel Categories</Typography>
+            <Typography variant="subtitle2" color="text.secondary">All Scenarios Parallel Categories in {period} (Average of time series samples)</Typography>
             <Paper sx={{ p: 1, pb: 6, flex: 1, height: 'calc(50vh - 80px)', position: 'relative' }}>
                 <Plot
                   data={[{
@@ -836,7 +839,7 @@ export default function ExpertApp() {
         <Box sx={{ width: '45%', p: 2, height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
           <Stack spacing={1} sx={{ height: '100%' }}>
             {/* 折れ線グラフエリア */}
-            <Typography variant="subtitle2" color="text.secondary">Time Series Analysis</Typography>
+            <Typography variant="subtitle2" color="text.secondary">Time Series in Specific Policy Scenario</Typography>
             <Paper sx={{ p: 1, pb: 10, flex: 1, height: '40vh', position: 'relative' }}>
               <Plot
                 data={timeseriesTraces}
@@ -879,7 +882,7 @@ export default function ExpertApp() {
             {/* 動的コンテンツ表示エリア */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">
-                Information
+                Additional Information
               </Typography>
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <Select
