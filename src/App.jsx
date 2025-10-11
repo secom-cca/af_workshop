@@ -100,7 +100,6 @@ export default function ExpertApp() {
         ts: Date.now(),
         opTime: new Date().toISOString(),
         page: window.location.pathname,
-        ua: navigator.userAgent
       };
       logQueueRef.current.push(evt);
       if (logQueueRef.current.length >= MAX_BATCH) {
