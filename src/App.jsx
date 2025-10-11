@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Box, AppBar, Toolbar, Typography, Divider, Button, Paper, FormControl, InputLabel, Select, MenuItem, Stack, Slider, Alert, CircularProgress, Menu, Dialog, DialogTitle, DialogContent, DialogActions, ThemeProvider, createTheme } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, Divider, Button, Paper, FormControl, InputLabel, Select, MenuItem, Stack, Slider, Alert, CircularProgress, Menu, Dialog, DialogTitle, DialogContent, DialogActions, ThemeProvider, createTheme, TextField } from '@mui/material';
 import Plot from 'react-plotly.js';
 import MenuIcon from '@mui/icons-material/Menu';
 import IconButton from '@mui/material/IconButton';
@@ -9,7 +9,7 @@ import axios from 'axios';
 // 専門家向けのDMDUデータ分析UI
 // - 3カラム構成: 左10% 入力、中央45% 散布図、右45% 時系列
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+const BACKEND_URL = "https://luypnmbfq5.execute-api.ap-southeast-2.amazonaws.com/test" || "http://localhost:8000";
 
 // Material-UIテーマを作成
 const theme = createTheme({
@@ -19,6 +19,150 @@ const theme = createTheme({
 });
 
 export default function ExpertApp() {
+  // --------- 操作ログ送信キュー（低負荷・バッファ送信） ---------
+  const logQueueRef = useRef([]);
+  const isFlushingRef = useRef(false);
+  const flushTimerRef = useRef(null);
+  const LOG_ENDPOINT = `${BACKEND_URL}`;
+  const MAX_BATCH = 20; // この件数を超えたら即時フラッシュ
+  const FLUSH_INTERVAL_MS = 60000; // 定期フラッシュ間隔
+
+  // ユーザー名管理
+  const [userName, setUserName] = useState(() => localStorage.getItem('app_user_name') || '');
+  const userNameRef = useRef(userName);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  useEffect(() => { userNameRef.current = userName; }, [userName]);
+  useEffect(() => {
+    if (!userName) setUserDialogOpen(true);
+  }, [userName]);
+  const handleSaveUserName = () => {
+    const name = (userName || '').trim();
+    if (!name) return;
+    localStorage.setItem('app_user_name', name);
+    setUserDialogOpen(false);
+  };
+
+  // スライダー操作のデバウンス用
+  const sliderDebounceRef = useRef({});
+  const SLIDER_DEBOUNCE_MS = 1000; // 1秒後にログを送信
+
+  const flushWithBeacon = React.useCallback((blob) => {
+    if (navigator?.sendBeacon) {
+      try {
+        return navigator.sendBeacon(LOG_ENDPOINT, blob);
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
+  }, [LOG_ENDPOINT]);
+
+  const flushWithFetch = React.useCallback(async (bodyObj) => {
+    try {
+      const response = await fetch(LOG_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify(bodyObj)
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      throw error; // エラーを再スローして上位で処理
+    }
+  }, [LOG_ENDPOINT]);
+
+  const flushLogs = React.useCallback(async () => {
+    if (isFlushingRef.current) return;
+    if (logQueueRef.current.length === 0) return;
+    isFlushingRef.current = true;
+    const events = logQueueRef.current.splice(0, logQueueRef.current.length);
+    const bodyObj = { events };
+    
+    // fetchを優先使用（CORS問題を回避）
+    try {
+      await flushWithFetch(bodyObj);
+    } catch (error) {
+      // fetchが失敗した場合のみsendBeaconをフォールバックとして使用
+      const blob = new Blob([JSON.stringify(bodyObj)], { type: 'application/json' });
+      flushWithBeacon(blob);
+    }
+    isFlushingRef.current = false;
+  }, [flushWithBeacon, flushWithFetch]);
+
+  const enqueueLog = React.useCallback((eventName, payload = {}) => {
+    try {
+      const evt = {
+        event: eventName,
+        payload,
+        user: userNameRef.current || 'anonymous',
+        ts: Date.now(),
+        opTime: new Date().toISOString(),
+        page: window.location.pathname,
+        ua: navigator.userAgent
+      };
+      logQueueRef.current.push(evt);
+      if (logQueueRef.current.length >= MAX_BATCH) {
+        void flushLogs();
+      }
+    } catch (_) {
+      // 失敗時は無視（UIへの影響を避ける）
+    }
+  }, [flushLogs]);
+
+  // スライダー操作のデバウンス関数
+  const enqueueSliderLog = React.useCallback((eventName, payload = {}) => {
+    try {
+      // 既存のタイマーをクリア
+      if (sliderDebounceRef.current[eventName]) {
+        clearTimeout(sliderDebounceRef.current[eventName]);
+      }
+      
+      // 新しいタイマーを設定
+      sliderDebounceRef.current[eventName] = setTimeout(() => {
+        enqueueLog(eventName, payload);
+        delete sliderDebounceRef.current[eventName];
+      }, SLIDER_DEBOUNCE_MS);
+    } catch (_) {
+      // 失敗時は無視（UIへの影響を避ける）
+    }
+  }, [enqueueLog]);
+
+  useEffect(() => {
+    // 定期フラッシュ
+    flushTimerRef.current = setInterval(() => {
+      void flushLogs();
+    }, FLUSH_INTERVAL_MS);
+    // 画面離脱時フラッシュ
+    const handleUnload = () => {
+      try {
+        if (logQueueRef.current.length === 0) return;
+        const bodyObj = { events: logQueueRef.current };
+        // 画面離脱時はsendBeaconを優先（ページ遷移中でも送信可能）
+        const blob = new Blob([JSON.stringify(bodyObj)], { type: 'application/json' });
+        const ok = flushWithBeacon(blob);
+        if (!ok) {
+          // sendBeaconが失敗した場合のみfetchを試行（非同期だが結果を待たない）
+          flushWithFetch(bodyObj).catch(() => {
+            // 画面離脱時は失敗しても無視
+          });
+        }
+        // できる限り空にしておく
+        logQueueRef.current = [];
+      } catch (_) {
+        // noop
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
+    return () => {
+      clearInterval(flushTimerRef.current);
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
+    };
+  }, [flushLogs, flushWithBeacon]);
+
   const [scenario, setScenario] = useState('RCP4.5');
   const [period, setPeriod] = useState(2050);
   
@@ -56,10 +200,23 @@ export default function ExpertApp() {
   const menuOpen = Boolean(menuAnchorEl);
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  const handleMenuOpen = (e) => setMenuAnchorEl(e.currentTarget);
-  const handleMenuClose = () => setMenuAnchorEl(null);
-  const handleOpenUpload = () => { setUploadOpen(true); handleMenuClose(); };
-  const handleCloseUpload = () => setUploadOpen(false);
+  const handleMenuOpen = (e) => {
+    enqueueLog('menu_open_click');
+    setMenuAnchorEl(e.currentTarget);
+  };
+  const handleMenuClose = () => {
+    enqueueLog('menu_close');
+    setMenuAnchorEl(null);
+  };
+  const handleOpenUpload = () => {
+    enqueueLog('open_upload_dialog');
+    setUploadOpen(true);
+    handleMenuClose();
+  };
+  const handleCloseUpload = () => {
+    enqueueLog('close_upload_dialog');
+    setUploadOpen(false);
+  };
 
   // 右下コンテンツデータ
   const contentData = {
@@ -133,11 +290,13 @@ export default function ExpertApp() {
 
   // 画像クリックハンドラー
   const handleImageClick = (src) => {
+    enqueueLog('content_image_open', { src });
     setPopupImage(src);
   };
 
   // ポップアップ閉じるハンドラー
   const handleClosePopup = () => {
+    if (popupImage) enqueueLog('content_image_close', { src: popupImage });
     setPopupImage(null);
   };
 
@@ -175,16 +334,13 @@ export default function ExpertApp() {
   };
 
   // APIでデータをロード
-  useEffect(() => {
-    loadDMDUData();
-  }, []);
-
-  const loadDMDUData = async () => {
+  const loadDMDUData = React.useCallback(async () => {
     setDmduStatus('loading');
     try {
       const response = await axios.post(`${BACKEND_URL}/load-dmdu-data`);
       setDmduStatus('loaded');
       console.log(response.data)
+      enqueueLog('dmdu_loaded', { via: 'api' });
       // ローカルJSONの読み込み（public配下）
       try {
         const meansResp = await fetch('/options_yearly_means.json');
@@ -204,7 +360,11 @@ export default function ExpertApp() {
       setDmduStatus('error');
       setDmduError(error.response?.data?.detail || 'No Data Loaded');
     }
-  };
+  }, [enqueueLog]);
+
+  useEffect(() => {
+    loadDMDUData();
+  }, [loadDMDUData]);
 
   // （遅延なし）
 
@@ -212,6 +372,9 @@ export default function ExpertApp() {
 
   // データベースオプション変更ハンドラー
   const handleDbOptionChange = (option, value) => {
+    const before = dbOptions?.[option];
+    const after = value;
+    enqueueLog('db_option_change', { option, before, after });
     setDbOptions(prev => ({
       ...prev,
       [option]: value
@@ -416,12 +579,17 @@ export default function ExpertApp() {
       };
       // いずれかが数値であれば反映
       if (Object.values(next).some(v => Number.isFinite(v))) {
-        setDbOptions(prev => ({
-          planting_trees_amount_level: Number.isFinite(next.planting_trees_amount_level) ? next.planting_trees_amount_level : prev.planting_trees_amount_level,
-          dam_levee_construction_cost_level: Number.isFinite(next.dam_levee_construction_cost_level) ? next.dam_levee_construction_cost_level : prev.dam_levee_construction_cost_level,
-          house_migration_amount_level: Number.isFinite(next.house_migration_amount_level) ? next.house_migration_amount_level : prev.house_migration_amount_level,
-          flow_irrigation_level_level: Number.isFinite(next.flow_irrigation_level_level) ? next.flow_irrigation_level_level : prev.flow_irrigation_level_level
-        }));
+        const before = { ...dbOptions };
+        const after = {
+          planting_trees_amount_level: Number.isFinite(next.planting_trees_amount_level) ? next.planting_trees_amount_level : before.planting_trees_amount_level,
+          dam_levee_construction_cost_level: Number.isFinite(next.dam_levee_construction_cost_level) ? next.dam_levee_construction_cost_level : before.dam_levee_construction_cost_level,
+          house_migration_amount_level: Number.isFinite(next.house_migration_amount_level) ? next.house_migration_amount_level : before.house_migration_amount_level,
+          flow_irrigation_level_level: Number.isFinite(next.flow_irrigation_level_level) ? next.flow_irrigation_level_level : before.flow_irrigation_level_level
+        };
+        enqueueLog('scatter_point_click', { options: opts, before, after });
+        setDbOptions(after);
+      } else {
+        enqueueLog('scatter_point_click', { options: opts });
       }
     } catch (_) {
       // 解析失敗時は何もしない
@@ -446,12 +614,17 @@ export default function ExpertApp() {
     
     // いずれかが数値であれば反映
     if (Object.values(next).some(v => Number.isFinite(v))) {
-      setDbOptions(prev => ({
-        planting_trees_amount_level: Number.isFinite(next.planting_trees_amount_level) ? next.planting_trees_amount_level : prev.planting_trees_amount_level,
-        dam_levee_construction_cost_level: Number.isFinite(next.dam_levee_construction_cost_level) ? next.dam_levee_construction_cost_level : prev.dam_levee_construction_cost_level,
-        house_migration_amount_level: Number.isFinite(next.house_migration_amount_level) ? next.house_migration_amount_level : prev.house_migration_amount_level,
-        flow_irrigation_level_level: Number.isFinite(next.flow_irrigation_level_level) ? next.flow_irrigation_level_level : prev.flow_irrigation_level_level
-      }));
+      const before = { ...dbOptions };
+      const after = {
+        planting_trees_amount_level: Number.isFinite(next.planting_trees_amount_level) ? next.planting_trees_amount_level : before.planting_trees_amount_level,
+        dam_levee_construction_cost_level: Number.isFinite(next.dam_levee_construction_cost_level) ? next.dam_levee_construction_cost_level : before.dam_levee_construction_cost_level,
+        house_migration_amount_level: Number.isFinite(next.house_migration_amount_level) ? next.house_migration_amount_level : before.house_migration_amount_level,
+        flow_irrigation_level_level: Number.isFinite(next.flow_irrigation_level_level) ? next.flow_irrigation_level_level : before.flow_irrigation_level_level
+      };
+      enqueueLog('parallel_line_click', { options: opts, before, after });
+      setDbOptions(after);
+    } else {
+      enqueueLog('parallel_line_click', { options: opts });
     }
   };
 
@@ -563,7 +736,6 @@ export default function ExpertApp() {
 
 
 
-
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ display: 'flex', height: '100vh' }}>
@@ -610,6 +782,26 @@ export default function ExpertApp() {
       </AppBar>
 
       <Box sx={{ display: 'flex', width: '100%', pt: 8, height: '100%-64px' }}>
+        {/* Username input dialog */}
+        <Dialog open={userDialogOpen} onClose={() => {}} fullWidth maxWidth="xs">
+          <DialogTitle>Enter Your Name</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Please enter your name. It will be recorded in the interaction logs.
+            </Typography>
+            <TextField
+              label="Name"
+              fullWidth
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              autoFocus
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleSaveUserName} variant="contained" disabled={!userName.trim()}>Save</Button>
+          </DialogActions>
+        </Dialog>
+
         <Dialog open={uploadOpen} onClose={handleCloseUpload} fullWidth maxWidth="sm">
           <DialogTitle>Upload JSON</DialogTitle>
           <DialogContent>
@@ -651,7 +843,7 @@ export default function ExpertApp() {
           <Stack spacing={2}>
             <FormControl fullWidth>
               <InputLabel id="scenario-label">Climate Scenario</InputLabel>
-              <Select labelId="scenario-label" value={scenario} label="Scenario" onChange={(e) => setScenario(e.target.value)} size="small" aria-label="small">
+              <Select labelId="scenario-label" value={scenario} label="Scenario" onChange={(e) => { const before = scenario; const after = e.target.value; setScenario(after); enqueueLog('scenario_change', { before, after }); }} size="small" aria-label="small">
                 <MenuItem value={'ALL'}>ALL</MenuItem>
                 <MenuItem value={'RCP1.9'}>RCP1.9</MenuItem>
                 <MenuItem value={'RCP2.6'}>RCP2.6</MenuItem>
@@ -665,7 +857,12 @@ export default function ExpertApp() {
               <Typography gutterBottom>Year: {period}</Typography>
               <Slider
                 value={period}
-                onChange={(e, newValue) => setPeriod(newValue)}
+                onChange={(e, newValue) => { 
+                  const before = period; 
+                  const after = newValue; 
+                  setPeriod(after); 
+                  enqueueSliderLog('period_change', { before, after }); 
+                }}
                 valueLabelDisplay="auto"
                 min={2025}
                 max={2100}
@@ -820,13 +1017,13 @@ export default function ExpertApp() {
                 <Box sx={{ position: 'absolute', left: 8, right: 8, bottom: 8, display: 'flex', gap: 1, alignItems: 'center', bgcolor: 'background.paper', px: 1, py: 0.5, borderRadius: 1, boxShadow: 1 }}>
                   <FormControl size="small" sx={{ minWidth: 140 }}>
                     <InputLabel id="scatter-x-label">X-axis</InputLabel>
-                    <Select labelId="scatter-x-label" value={axisLabels.scatterX} label="X-axis" onChange={(e) => setAxisLabels(prev => ({ ...prev, scatterX: e.target.value }))}>
+                    <Select labelId="scatter-x-label" value={axisLabels.scatterX} label="X-axis" onChange={(e) => { const before = axisLabels.scatterX; const after = e.target.value; setAxisLabels(prev => ({ ...prev, scatterX: after })); enqueueLog('scatter_x_axis_change', { before, after }); }}>
                       {availableMetrics.map((m) => (<MenuItem key={m} value={m}>{m}</MenuItem>))}
                     </Select>
                   </FormControl>
                   <FormControl size="small" sx={{ minWidth: 140 }}>
                     <InputLabel id="scatter-y-label">Y-axis</InputLabel>
-                    <Select labelId="scatter-y-label" value={axisLabels.scatterY} label="Y-axis" onChange={(e) => setAxisLabels(prev => ({ ...prev, scatterY: e.target.value }))}>
+                    <Select labelId="scatter-y-label" value={axisLabels.scatterY} label="Y-axis" onChange={(e) => { const before = axisLabels.scatterY; const after = e.target.value; setAxisLabels(prev => ({ ...prev, scatterY: after })); enqueueLog('scatter_y_axis_change', { before, after }); }}>
                       {availableMetrics.map((m) => (<MenuItem key={m} value={m}>{m}</MenuItem>))}
                     </Select>
                   </FormControl>
@@ -896,7 +1093,7 @@ export default function ExpertApp() {
               <Box sx={{ position: 'absolute', left: 8, bottom: 8, display: 'flex', gap: 1, alignItems: 'center', bgcolor: 'background.paper', px: 1, py: 0.5, borderRadius: 1, boxShadow: 1 }}>
                 <FormControl size="small" sx={{ minWidth: 180 }}>
                   <InputLabel id="timeseries-label">Y-axis</InputLabel>
-                  <Select labelId="timeseries-label" value={axisLabels.timeseriesMetric} label="Y-axis" onChange={(e) => setAxisLabels(prev => ({ ...prev, timeseriesMetric: e.target.value }))}>
+                  <Select labelId="timeseries-label" value={axisLabels.timeseriesMetric} label="Y-axis" onChange={(e) => { const before = axisLabels.timeseriesMetric; const after = e.target.value; setAxisLabels(prev => ({ ...prev, timeseriesMetric: after })); enqueueLog('timeseries_metric_change', { before, after }); }}>
                     {availableMetrics.map((m) => (<MenuItem key={m} value={m}>{m}</MenuItem>))}
                   </Select>
                 </FormControl>
@@ -911,7 +1108,7 @@ export default function ExpertApp() {
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <Select
                   value={contentType}
-                  onChange={(e) => setContentType(e.target.value)}
+                  onChange={(e) => { const before = contentType; const after = e.target.value; setContentType(after); enqueueLog('content_type_change', { before, after }); }}
                   displayEmpty
                 >
                   {Object.entries(contentData).map(([key, data]) => (
@@ -928,7 +1125,7 @@ export default function ExpertApp() {
                   component="img"
                   src={contentData[contentType].src}
                   alt={contentData[contentType].alt}
-                  onClick={() => handleImageClick(contentData[contentType].src)}
+                  onClick={() => { handleImageClick(contentData[contentType].src); }}
                   sx={{
                     maxWidth: '100%',
                     maxHeight: '100%',
