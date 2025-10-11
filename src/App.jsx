@@ -25,7 +25,7 @@ export default function ExpertApp() {
   const flushTimerRef = useRef(null);
   const LOG_ENDPOINT = `${BACKEND_URL}`;
   const MAX_BATCH = 20; // この件数を超えたら即時フラッシュ
-  const FLUSH_INTERVAL_MS = 5000; // 定期フラッシュ間隔
+  const FLUSH_INTERVAL_MS = 60000; // 定期フラッシュ間隔
 
   // ユーザー名管理
   const [userName, setUserName] = useState(() => localStorage.getItem('app_user_name') || '');
@@ -42,6 +42,10 @@ export default function ExpertApp() {
     setUserDialogOpen(false);
   };
 
+  // スライダー操作のデバウンス用
+  const sliderDebounceRef = useRef({});
+  const SLIDER_DEBOUNCE_MS = 1000; // 1秒後にログを送信
+
   const flushWithBeacon = React.useCallback((blob) => {
     if (navigator?.sendBeacon) {
       try {
@@ -55,14 +59,17 @@ export default function ExpertApp() {
 
   const flushWithFetch = React.useCallback(async (bodyObj) => {
     try {
-      await fetch(LOG_ENDPOINT, {
+      const response = await fetch(LOG_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         keepalive: true,
         body: JSON.stringify(bodyObj)
       });
-    } catch (_) {
-      // 送信失敗時は捨てる（リトライしない）
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      throw error; // エラーを再スローして上位で処理
     }
   }, [LOG_ENDPOINT]);
 
@@ -72,14 +79,14 @@ export default function ExpertApp() {
     isFlushingRef.current = true;
     const events = logQueueRef.current.splice(0, logQueueRef.current.length);
     const bodyObj = { events };
-    // Debug: 送信内容を確認
+    
+    // fetchを優先使用（CORS問題を回避）
     try {
-      console.log('[logs] sending batch', { count: events.length, body: bodyObj });
-    } catch (_) {}
-    const blob = new Blob([JSON.stringify(bodyObj)], { type: 'application/json' });
-    const ok = flushWithBeacon(blob);
-    if (!ok) {
       await flushWithFetch(bodyObj);
+    } catch (error) {
+      // fetchが失敗した場合のみsendBeaconをフォールバックとして使用
+      const blob = new Blob([JSON.stringify(bodyObj)], { type: 'application/json' });
+      flushWithBeacon(blob);
     }
     isFlushingRef.current = false;
   }, [flushWithBeacon, flushWithFetch]);
@@ -104,6 +111,24 @@ export default function ExpertApp() {
     }
   }, [flushLogs]);
 
+  // スライダー操作のデバウンス関数
+  const enqueueSliderLog = React.useCallback((eventName, payload = {}) => {
+    try {
+      // 既存のタイマーをクリア
+      if (sliderDebounceRef.current[eventName]) {
+        clearTimeout(sliderDebounceRef.current[eventName]);
+      }
+      
+      // 新しいタイマーを設定
+      sliderDebounceRef.current[eventName] = setTimeout(() => {
+        enqueueLog(eventName, payload);
+        delete sliderDebounceRef.current[eventName];
+      }, SLIDER_DEBOUNCE_MS);
+    } catch (_) {
+      // 失敗時は無視（UIへの影響を避ける）
+    }
+  }, [enqueueLog]);
+
   useEffect(() => {
     // 定期フラッシュ
     flushTimerRef.current = setInterval(() => {
@@ -114,12 +139,15 @@ export default function ExpertApp() {
       try {
         if (logQueueRef.current.length === 0) return;
         const bodyObj = { events: logQueueRef.current };
-        // Debug: 画面離脱時の送信内容を確認
-        try {
-          console.log('[logs] sending on unload', { count: logQueueRef.current.length, body: bodyObj });
-        } catch (_) {}
+        // 画面離脱時はsendBeaconを優先（ページ遷移中でも送信可能）
         const blob = new Blob([JSON.stringify(bodyObj)], { type: 'application/json' });
-        flushWithBeacon(blob);
+        const ok = flushWithBeacon(blob);
+        if (!ok) {
+          // sendBeaconが失敗した場合のみfetchを試行（非同期だが結果を待たない）
+          flushWithFetch(bodyObj).catch(() => {
+            // 画面離脱時は失敗しても無視
+          });
+        }
         // できる限り空にしておく
         logQueueRef.current = [];
       } catch (_) {
@@ -805,7 +833,12 @@ export default function ExpertApp() {
               <Typography gutterBottom>Year: {period}</Typography>
               <Slider
                 value={period}
-                onChange={(e, newValue) => { const before = period; const after = newValue; setPeriod(after); enqueueLog('period_change', { before, after }); }}
+                onChange={(e, newValue) => { 
+                  const before = period; 
+                  const after = newValue; 
+                  setPeriod(after); 
+                  enqueueSliderLog('period_change', { before, after }); 
+                }}
                 valueLabelDisplay="auto"
                 min={2025}
                 max={2100}
