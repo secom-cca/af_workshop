@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Box, AppBar, Toolbar, Typography, Divider, Button, Paper, FormControl, InputLabel, Select, MenuItem, Stack, Slider, Alert, CircularProgress, Menu, Dialog, DialogTitle, DialogContent, DialogActions, ThemeProvider, createTheme, TextField } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, Divider, Button, Paper, FormControl, InputLabel, Select, MenuItem, Stack, Slider, Alert, CircularProgress, Menu, Dialog, DialogTitle, DialogContent, DialogActions, ThemeProvider, createTheme, TextField, Tooltip, IconButton } from '@mui/material';
 import Plot from 'react-plotly.js';
 import MenuIcon from '@mui/icons-material/Menu';
-import IconButton from '@mui/material/IconButton';
+import InfoIcon from '@mui/icons-material/Info';
 import axios from 'axios';
 
 
@@ -11,12 +11,36 @@ import axios from 'axios';
 
 const BACKEND_URL = "https://luypnmbfq5.execute-api.ap-southeast-2.amazonaws.com/test" || "http://localhost:8000";
 
+// 入力項目の説明テキスト
+const INPUT_DESCRIPTIONS = {
+  scenario: "Select the climate scenario (RCP) for analysis. RCP1.9 represents the most optimistic scenario with strong mitigation, while RCP8.5 represents the worst-case scenario with high emissions.",
+  period: "Choose the target year for analysis.",
+  planting_trees_amount_level: "Control the level of forest conservation and tree planting activities. Level 0 = no action, Level 1 = moderate action, Level 2 = aggressive action.",
+  dam_levee_construction_cost_level: "Set the investment level for dam and levee construction to reduce flood risk. Higher levels provide better flood protection but require more resources.",
+  house_migration_amount_level: "Determine the level of house migration and relocation programs. This helps reduce exposure to flood-prone areas by moving people to safer locations.",
+  flow_irrigation_level_level: "Control the irrigation system improvements and water management. Higher levels improve agricultural productivity and water efficiency."
+};
+
 // Material-UIテーマを作成
 const theme = createTheme({
   palette: {
     mode: 'light',
   },
 });
+
+// Infoアイコン付きラベルコンポーネント
+const InfoLabel = ({ children, description }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+    <Typography variant="body2" component="span">
+      {children}
+    </Typography>
+    <Tooltip title={description} arrow placement="top">
+      <IconButton size="small" sx={{ p: 0.25 }}>
+        <InfoIcon fontSize="small" color="action" />
+      </IconButton>
+    </Tooltip>
+  </Box>
+);
 
 export default function ExpertApp() {
   // --------- 操作ログ送信キュー（低負荷・バッファ送信） ---------
@@ -817,7 +841,11 @@ export default function ExpertApp() {
             </Box>
           <Stack spacing={2}>
             <FormControl fullWidth>
-              <InputLabel id="scenario-label">Climate Scenario</InputLabel>
+              <InputLabel id="scenario-label">
+                <InfoLabel description={INPUT_DESCRIPTIONS.scenario}>
+                  Climate Scenario
+                </InfoLabel>
+              </InputLabel>
               <Select labelId="scenario-label" value={scenario} label="Scenario" onChange={(e) => { const before = scenario; const after = e.target.value; setScenario(after); enqueueLog('scenario_change', { before, after }); }} size="small" aria-label="small">
                 <MenuItem value={'ALL'}>ALL</MenuItem>
                 <MenuItem value={'RCP1.9'}>RCP1.9</MenuItem>
@@ -829,7 +857,9 @@ export default function ExpertApp() {
             </FormControl>
 
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Year: {period}</Typography>
+              <InfoLabel description={INPUT_DESCRIPTIONS.period}>
+                Year: {period}
+              </InfoLabel>
               <Slider
                 value={period}
                 onChange={(e, newValue) => { 
@@ -855,7 +885,9 @@ export default function ExpertApp() {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>Upstream Policy Options </Typography>
             
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Planting & Forest Conservation</Typography>
+              <InfoLabel description={INPUT_DESCRIPTIONS.planting_trees_amount_level}>
+                Planting & Forest Conservation
+              </InfoLabel>
               <Slider
                 value={dbOptions.planting_trees_amount_level}
                 onChange={(e, newValue) => handleDbOptionChange('planting_trees_amount_level', newValue)}
@@ -874,7 +906,9 @@ export default function ExpertApp() {
             </Box>
 
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Dam & Levee Construction</Typography>
+              <InfoLabel description={INPUT_DESCRIPTIONS.dam_levee_construction_cost_level}>
+                Dam & Levee Construction
+              </InfoLabel>
               <Slider
                 value={dbOptions.dam_levee_construction_cost_level}
                 onChange={(e, newValue) => handleDbOptionChange('dam_levee_construction_cost_level', newValue)}
@@ -896,7 +930,9 @@ export default function ExpertApp() {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>Downstream Policy Options </Typography>
 
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>House Migration Level</Typography>
+              <InfoLabel description={INPUT_DESCRIPTIONS.house_migration_amount_level}>
+                House Migration Level
+              </InfoLabel>
               <Slider
                 value={dbOptions.house_migration_amount_level}
                 onChange={(e, newValue) => handleDbOptionChange('house_migration_amount_level', newValue)}
@@ -915,7 +951,9 @@ export default function ExpertApp() {
             </Box>
 
             <Box sx={{ px: 2 }}>
-              <Typography gutterBottom>Flow Irrigation</Typography>
+              <InfoLabel description={INPUT_DESCRIPTIONS.flow_irrigation_level_level}>
+                Flow Irrigation
+              </InfoLabel>
               <Slider
                 value={dbOptions.flow_irrigation_level_level}
                 onChange={(e, newValue) => handleDbOptionChange('flow_irrigation_level_level', newValue)}
