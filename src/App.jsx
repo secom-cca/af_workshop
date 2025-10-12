@@ -18,7 +18,7 @@ const INPUT_DESCRIPTIONS = {
   planting_trees_amount_level: "Control the level of forest conservation and tree planting activities. Level 0 = no action, Level 1 = moderate action, Level 2 = aggressive action.",
   dam_levee_construction_cost_level: "Set the investment level for dam and levee construction to reduce flood risk. Higher levels provide better flood protection but require more resources.",
   house_migration_amount_level: "Determine the level of house migration and relocation programs. This helps reduce exposure to flood-prone areas by moving people to safer locations.",
-  flow_irrigation_level_level: "Control the irrigation system improvements and water management. Higher levels improve agricultural productivity and water efficiency."
+  flow_irrigation_level_level: "Control the flow irrigation level. Higher levels protect crops from heat damage but increase water usage and risk of water shortages.",
 };
 
 // Material-UIテーマを作成
