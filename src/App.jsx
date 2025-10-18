@@ -16,7 +16,7 @@ const INPUT_DESCRIPTIONS = {
   scenario: "Select the climate scenario (RCP) for analysis. RCP1.9 represents the most optimistic scenario with strong mitigation, while RCP8.5 represents the worst-case scenario with high emissions.",
   period: "Choose the target year for analysis.",
   planting_trees_amount_level: "Control the level of forest conservation and tree planting activities.",
-  dam_levee_construction_cost_level: "Set the investment level for dam and levee construction to reduce flood risk. Higher levels provide better flood protection but require more resources.",
+  dam_levee_construction_cost_level: "Set the investment level for levee construction to reduce flood risk. Higher levels provide better flood protection but require more resources.",
   house_migration_amount_level: "Determine the level of house migration and relocation programs. This helps reduce exposure to flood-prone areas by moving people to safer locations.",
   flow_irrigation_level_level: "Control the flow irrigation level. Higher levels protect crops from heat damage but increase water usage and risk of water shortages.",
 };
@@ -579,7 +579,7 @@ export default function ExpertApp() {
         const opts = JSON.parse(s.customdata[0] || '{}');
         const lines = [];
         if (opts.planting_trees_amount_level !== undefined) lines.push(`Planting & Forest Conservation Level: ${opts.planting_trees_amount_level}`);
-        if (opts.dam_levee_construction_cost_level !== undefined) lines.push(`Dam & Levee Level: ${opts.dam_levee_construction_cost_level}`);
+        if (opts.dam_levee_construction_cost_level !== undefined) lines.push(`Levee Level: ${opts.dam_levee_construction_cost_level}`);
         if (opts.house_migration_amount_level !== undefined) lines.push(`House Migration Level: ${opts.house_migration_amount_level}`);
         if (opts.flow_irrigation_level_level !== undefined) lines.push(`Flow Irrigation Level: ${opts.flow_irrigation_level_level}`);
         if (opts.RCP) lines.push(`RCP: ${opts.RCP}`);
